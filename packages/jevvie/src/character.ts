@@ -6,11 +6,9 @@ export type Trick = 'spin' | 'jump' | 'wave' | 'look' | 'stretch' | 'tap'
 export const TRICKS: readonly Trick[] = ['spin', 'jump', 'wave', 'look', 'stretch', 'tap']
 const TRICK_MS: Record<Trick, number> = { spin: 700, jump: 600, wave: 900, look: 1600, stretch: 900, tap: 1000 }
 export type JevvieView = {
-  /** Where the pointer is, relative to the character's centre, in CSS pixels. */
   look: (dx: number, dy: number) => void
   mood: (m: Mood) => void
   trick: (t: Trick) => void
-  /** A squash and a stretch: landing, being dropped or poked. */
   squash: (amount?: number) => void
   dispose: () => void
 }
@@ -28,7 +26,6 @@ export type Wear = 'none' | 'clip' | 'pencil' | 'pin' | 'flag' | 'antennas'
 const W = 64, H = 44
 const PX = 3.5 / W
 
-/** `eyes` is also paper; `ink` the pupils, mouth and feet; `ground` the colour its light bounces from. */
 export type CharacterColors = { body: string; light: string; eyes: string; ink: string; blush: string; ground: string; tear?: string; rule?: string; metal?: string; wood?: string; pin?: string; visor?: string }
 
 // One renderer for all: browsers cap WebGL contexts (phones at a handful) and drop the oldest.
@@ -44,7 +41,7 @@ function sharedRenderer() {
   return shared
 }
 
-/** Renders with WebGL2 (forceWebGL): it leaves the WebGPU device to other work on the page, and a lost WebGPU device would throw where nothing can catch it. */
+// WebGL2, not WebGPU: a lost WebGPU device throws where nothing can catch it.
 export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduced = false, shape = 'bar', wear = 'none' }: { colors: CharacterColors; reduced?: boolean; shape?: Shape; wear?: Wear }): Promise<JevvieView> {
   const renderer = await sharedRenderer()
   users++
@@ -75,12 +72,10 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
 
   const me = new THREE.Group()
   const add = (m: THREE.Mesh, x = 0, y = 0) => { m.position.set(x, y, m.position.z); me.add(m); return m }
-  // few segments, so it stays pixel-crisp
   const lathe = (pts: [number, number][]) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 12), skin)
   const BASE: [number, number][] = [[0, -0.85], [0.6, -0.85], [0.6, -0.72], [0.5, -0.66], [0.44, -0.6], [0.44, -0.54], [0.3, -0.48]]
   const dome = (x: number, y: number, r: number, ry = r): [number, number][] => Array.from({ length: 7 }, (_, i) => { const a = (-60 + i * 25) * Math.PI / 180; return [Math.max(0, x + Math.cos(a) * r), y + Math.sin(a) * ry] as [number, number] })
   const shine = (w: number, y: number) => { const m = box(w, PX * 1.2, PX, light); m.position.z = 0.401; return add(m, -0.05, y - PX) }
-  // face: y, z, scale; `profile`: seen side on, an eye each side at `eye`, `z` out from the middle
   type Spec = { y: number; z: number; scale: number; feet: number[]; floor: number; top: number; whites?: boolean; profile?: { eye: [number, number]; mouth: [number, number]; z: number } }
   const bodies: Record<Shape, () => Spec> = {
     bar: () => { add(box(2.3, 0.95, 0.8, skin)); shine(2.0, 0.47); return { y: 0, z: 0.41, scale: 1, feet: [-0.7, 0.7], floor: -0.57, top: 0.48 } },
@@ -224,7 +219,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   me.add(face)
   const eyes = [-0.46, 0.46].map((x) => {
     const eye = new THREE.Group()
-    // corners cut, so it reads round at this size
     if (body.whites !== false) eye.add(box(0.46, 0.44, 0.02, white), box(0.34, 0.56, 0.02, white))
     const pupil = new THREE.Group()
     pupil.add(box(0.2, 0.28, 0.02, ink))
@@ -236,7 +230,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     eye.position.set(x, 0.09, 0)
     face.add(eye)
     const look = eye.children.slice()
-    // laughing, the eye squeezed to a ^; angry, a brow; crying, a tear
     const caret = new THREE.Group()
     for (const side of [-1, 1]) { const b = box(0.24, PX * 1.6, 0.02, ink); b.rotation.z = side * -0.6; b.position.set(side * 0.09, -0.02, 0.02); caret.add(b) }
     const brow = box(0.38, PX * 1.6, 0.02, ink)
@@ -295,7 +288,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   }
   scene.add(me)
   const size = new THREE.Box3().setFromObject(me), [sw, sd] = [size.max.x - size.min.x + 0.2, Math.min(0.9, size.max.z - size.min.z + 0.1)]
-  // the mood's sign, drawn in whole pixels beside the head; it doesn't turn with the body
   const glyph = (rows: string[], m: THREE.Material, x = 0, y = 0) => {
     const g = new THREE.Group()
     rows.forEach((r, j) => [...r].forEach((c, i) => { if (c === '#') { const b = box(PX, PX, 0.02, m); b.position.set(x + i * PX, y - j * PX, 0); g.add(b) } }))
@@ -323,7 +315,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
 
   const draw = (t: number) => {
     const s = t / 1000
-    // easing per frame, scaled to the frame's length, so a 120Hz screen turns no faster than a 60Hz one
     const dt = prev ? Math.min(100, t - prev) : 16.7
     prev = t
     const follow = (k: number) => (reduced ? 1 : 1 - (1 - k) ** (dt / 16.7))

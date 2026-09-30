@@ -4,7 +4,6 @@ export type Trail = { add: (x: number, y: number) => void; dispose: () => void }
 
 const MAX = 128, LIFE = 900, RADIUS = 14, PIXEL = 2
 
-/** `color` is RGB, 0–1. */
 export async function mountTrail(canvas: HTMLCanvasElement, color: readonly [number, number, number]): Promise<Trail | null> {
   if (!('gpu' in navigator)) return null
   const gpu = await init().catch(() => null)
@@ -42,7 +41,6 @@ struct Params {
   color: vec4f,
 }
 @group(0) @binding(0) var<uniform> params: Params;
-// a dot: x, y (CSS px), strength 0–1, radius (CSS px)
 @group(0) @binding(1) var<storage, read> dots: array<vec4f>;
 
 struct V {

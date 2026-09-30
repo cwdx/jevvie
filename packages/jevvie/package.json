@@ -1,0 +1,39 @@
+{
+  "name": "@cw/jevvie",
+  "version": "0.1.0",
+  "description": "Jevvie: a small companion for a website, after Office's assistant. A site's actions (WebMCP tools) as Jev Choices, tips it offers only when they fit, a three.js voxel character and a 1-bit trail drawn with vgpu.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/companion.ts",
+    "./character": "./src/character.ts",
+    "./trail": "./src/trail.ts",
+    "./styles": "./src/styles.ts"
+  },
+  "files": [
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "lint": "eslint . --cache --cache-location node_modules/.cache/eslint/",
+    "format": "eslint . --fix --cache --cache-location node_modules/.cache/eslint/",
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "three": ">=0.186.0",
+    "vgpu": ">=0.5.0"
+  },
+  "devDependencies": {
+    "@cw/eslint-config": "*",
+    "@types/three": "^0.186.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260707.2",
+    "eslint": "^10.11.0",
+    "three": "^0.186.0",
+    "typescript": "^6.0.3",
+    "vgpu": "^0.5.0",
+    "vitest": "^5.0.1"
+  }
+}

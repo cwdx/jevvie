@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu'
-import { stylist, type Style } from './styles'
 
-export type Mood = 'idle' | 'happy' | 'think' | 'sulk' | 'sleep' | 'surprised' | 'confused' | 'love'
+export type Mood = 'idle' | 'happy' | 'think' | 'sulk' | 'sleep' | 'surprised' | 'confused' | 'love' | 'laugh' | 'cry' | 'angry' | 'wink'
+export const MOODS: readonly Mood[] = ['idle', 'happy', 'love', 'laugh', 'wink', 'think', 'confused', 'surprised', 'cry', 'angry', 'sulk', 'sleep']
 export type Trick = 'spin' | 'jump' | 'wave' | 'look' | 'stretch' | 'tap'
 export const TRICKS: readonly Trick[] = ['spin', 'jump', 'wave', 'look', 'stretch', 'tap']
 const TRICK_MS: Record<Trick, number> = { spin: 700, jump: 600, wave: 900, look: 1600, stretch: 900, tap: 1000 }
@@ -29,7 +29,7 @@ const W = 64, H = 44
 const PX = 3.5 / W
 
 /** `eyes` is also paper; `ink` the pupils, mouth and feet; `ground` the colour its light bounces from. */
-export type CharacterColors = { body: string; light: string; eyes: string; ink: string; blush: string; ground: string; rule?: string; metal?: string; wood?: string; pin?: string; visor?: string }
+export type CharacterColors = { body: string; light: string; eyes: string; ink: string; blush: string; ground: string; tear?: string; rule?: string; metal?: string; wood?: string; pin?: string; visor?: string }
 
 // One renderer for all: browsers cap WebGL contexts (phones at a handful) and drop the oldest.
 let shared: Promise<THREE.WebGPURenderer> | undefined, users = 0
@@ -45,13 +45,12 @@ function sharedRenderer() {
 }
 
 /** Renders with WebGL2 (forceWebGL): it leaves the WebGPU device to other work on the page, and a lost WebGPU device would throw where nothing can catch it. */
-export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduced = false, shape = 'bar', wear = 'none', style = 'toon' }: { colors: CharacterColors; reduced?: boolean; shape?: Shape; wear?: Wear; style?: Style }): Promise<JevvieView> {
+export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduced = false, shape = 'bar', wear = 'none' }: { colors: CharacterColors; reduced?: boolean; shape?: Shape; wear?: Wear }): Promise<JevvieView> {
   const renderer = await sharedRenderer()
   users++
-  const frame = Object.assign(document.createElement('canvas'), { width: W, height: H }).getContext('2d', { willReadFrequently: true })!
-  const draws = stylist(style, canvas.getContext('2d')!, W, H, { body: colors.body, ink: colors.ink })
-  canvas.width = draws.width
-  canvas.height = draws.height
+  const out = canvas.getContext('2d')!
+  canvas.width = W
+  canvas.height = H
 
   const scene = new THREE.Scene()
   const camera = new THREE.OrthographicCamera(-1.75, 1.75, 1.2, -1.2, 0.1, 20)
@@ -70,9 +69,8 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   const skin = toon(colors.body), light = flat(colors.light), white = flat(colors.eyes), ink = flat(colors.ink), blush = flat(colors.blush)
   const shade = flat(colors.ink, 0.22)
   const paper = toon(colors.eyes), rule = flat(colors.rule ?? colors.ink), metal = toon(colors.metal ?? colors.ink), wood = toon(colors.wood ?? colors.body), pinHead = toon(colors.pin ?? colors.blush)
-  const crater = toon(colors.rule ?? colors.ink), visor = toon(colors.visor ?? colors.ink)
-  const materials = [skin, light, white, ink, blush, shade, paper, rule, metal, wood, pinHead, crater, visor]
-  if (style === 'wire') for (const m of materials) if (m !== shade) m.wireframe = true
+  const crater = toon(colors.rule ?? colors.ink), visor = toon(colors.visor ?? colors.ink), tear = flat(colors.tear ?? colors.eyes)
+  const materials = [skin, light, white, ink, blush, shade, paper, rule, metal, wood, pinHead, crater, visor, tear]
   const box = (w: number, h: number, d: number, m: THREE.Material) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m)
 
   const me = new THREE.Group()
@@ -237,7 +235,17 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     eye.add(pupil)
     eye.position.set(x, 0.09, 0)
     face.add(eye)
-    return { eye, pupil }
+    const look = eye.children.slice()
+    // laughing, the eye squeezed to a ^; angry, a brow; crying, a tear
+    const caret = new THREE.Group()
+    for (const side of [-1, 1]) { const b = box(0.24, PX * 1.6, 0.02, ink); b.rotation.z = side * -0.6; b.position.set(side * 0.09, -0.02, 0.02); caret.add(b) }
+    const brow = box(0.38, PX * 1.6, 0.02, ink)
+    brow.rotation.z = x < 0 ? -0.4 : 0.4
+    brow.position.set(0, 0.33, 0.02)
+    const drop = box(PX * 1.6, 0.46, 0.02, tear)
+    drop.position.set(x < 0 ? -0.1 : 0.1, -0.39, 0.03)
+    eye.add(caret, brow, drop)
+    return { eye, look, pupil, caret, brow, drop }
   })
   const mouthAt = (...parts: [number, number, number, number][]) => {
     const g = new THREE.Group()
@@ -250,12 +258,14 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     smile: mouthAt([0, -0.02, 0.2, PX], [-0.12, 0.01, PX, PX], [0.12, 0.01, PX, PX]),
     grin: mouthAt([0, -0.04, 0.24, PX], [-0.15, 0, PX, PX * 1.6], [0.15, 0, PX, PX * 1.6]),
     open: mouthAt([0, -0.02, 0.12, 0.12]),
+    wide: mouthAt([0, -0.04, 0.3, 0.14]),
     flat: mouthAt([0.03, 0, 0.18, PX]),
     wonky: mouthAt([-0.06, 0.01, 0.1, PX], [0.06, -0.02, 0.1, PX]),
     frown: mouthAt([0, 0.01, 0.2, PX], [-0.12, -0.02, PX, PX], [0.12, -0.02, PX, PX]),
   }
   const MOUTH: Record<Mood, keyof typeof mouths | undefined> = {
     idle: 'smile', happy: 'grin', love: 'grin', think: 'flat', confused: 'wonky', surprised: 'open', sulk: 'frown', sleep: undefined,
+    laugh: 'wide', cry: 'frown', angry: 'frown', wink: 'grin',
   }
   const cheeks = [-0.82, 0.82].map((x) => { const c = box(0.2, PX * 1.4, 0.02, blush); c.position.set(x, -0.16, 0.01); face.add(c); return c })
   if (body.profile) {
@@ -285,6 +295,23 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   }
   scene.add(me)
   const size = new THREE.Box3().setFromObject(me), [sw, sd] = [size.max.x - size.min.x + 0.2, Math.min(0.9, size.max.z - size.min.z + 0.1)]
+  // the mood's sign, drawn in whole pixels beside the head; it doesn't turn with the body
+  const glyph = (rows: string[], m: THREE.Material, x = 0, y = 0) => {
+    const g = new THREE.Group()
+    rows.forEach((r, j) => [...r].forEach((c, i) => { if (c === '#') { const b = box(PX, PX, 0.02, m); b.position.set(x + i * PX, y - j * PX, 0); g.add(b) } }))
+    return g
+  }
+  const Z5 = ['#####', '...#.', '..#..', '.#...', '#####']
+  const signs: Partial<Record<Mood, THREE.Group>> = {
+    love: glyph(['.#.#.', '#####', '#####', '.###.', '..#..'], blush),
+    sleep: (() => { const g = glyph(['###', '.#.', '###'], ink, 0, -3 * PX); g.add(glyph(Z5, ink, 4 * PX, 2 * PX)); return g })(),
+    confused: glyph(['.###.', '#...#', '...#.', '..#..', '.....', '..#..'], ink),
+    surprised: glyph(['#', '#', '#', '#', '.', '#'], ink, PX * 2),
+    think: glyph(['#.#.#'], ink, 0, -3 * PX),
+    angry: glyph(['.#.#.', '##.##', '.....', '##.##', '.#.#.'], blush),
+  }
+  const signAt = new THREE.Vector3(Math.min(1.25, size.max.x + 0.08), Math.min(0.92, body.top + 0.32), 0.6)
+  for (const g of Object.values(signs)) { g.position.copy(signAt); g.visible = false; scene.add(g) }
   const ground = box(1, 0.01, 1, shade)
   ground.position.set((size.max.x + size.min.x) / 2, body.floor - 0.11, 0)
   scene.add(ground)
@@ -310,13 +337,14 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     const glance = trick === 'look' ? Math.sin(k * Math.PI * 2) * 0.9 : 0
     const reach = trick === 'stretch' ? arc * 0.3 : 0
     const breathe = reduced ? 0 : Math.sin(s * (asleep ? 1.2 : 2.4)) * (asleep ? 0.05 : 0.025)
-    const bounce = mood === 'happy' && !reduced ? Math.abs(Math.sin(s * 9)) * 0.22 : 0
+    const bounce = (mood === 'happy' || mood === 'laugh') && !reduced ? Math.abs(Math.sin(s * (mood === 'laugh' ? 14 : 9))) * (mood === 'laugh' ? 0.14 : 0.22) : 0
     const turn = (mood === 'sulk' ? Math.PI * 0.85 : mood === 'think' ? Math.sin(s * 3) * 0.12 : lookX * 0.35) + glance
     me.rotation.y += (turn - me.rotation.y) * follow(glance ? 0.4 : 0.18)
     me.rotation.y += spin ? spin - spun : 0
     spun = spin
     const tilt = mood === 'confused' ? 0.18 + Math.sin(s * 2) * 0.03 : mood === 'love' ? Math.sin(s * 2.5) * 0.08 : mood === 'think' ? Math.sin(s * 5) * 0.04 : 0
-    me.rotation.z = (reduced ? 0 : tilt) + sway
+    const shake = mood === 'angry' && !reduced ? Math.sin(s * 40) * 0.03 : 0
+    me.rotation.z = (reduced ? 0 : tilt) + sway + shake
     if (squashT) { const k = (t - squashT) / 1000; squashV = Math.exp(-k * 7) * Math.cos(k * 22) * 0.35 * squashA; if (k > 1.2) { squashT = 0; squashV = 0 } }
     me.scale.set(1 - squashV * 0.6 - reach * 0.4, 1 + breathe + squashV + reach, 1)
     me.position.y = bounce + hop - (asleep ? 0.12 : 0)
@@ -325,26 +353,30 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     ground.scale.set(sw * (1 - up * 0.5), 1, sd * (1 - up * 0.5))
     if (t > nextBlink) { blinking = t; nextBlink = t + 2500 + Math.random() * 4000 }
     const blink = blinking && t - blinking < 130 ? 0.12 : 1
-    eyes.forEach(({ eye, pupil }, i) => {
-      const open = mood === 'surprised' ? 1.25 : mood === 'love' ? 0.3 : mood === 'confused' && i === 0 ? 0.6 : 1
-      eye.scale.set(mood === 'surprised' ? 1.12 : 1, asleep ? 0.1 : blink * open, 1)
+    eyes.forEach(({ eye, look, pupil, caret, brow, drop }, i) => {
+      const open = mood === 'surprised' ? 1.25 : mood === 'love' ? 0.3 : mood === 'confused' && i === 0 ? 0.6 : mood === 'cry' ? 0.7 : mood === 'angry' ? 0.75 : 1
+      for (const o of look) o.visible = mood !== 'laugh'
+      caret.visible = mood === 'laugh'
+      brow.visible = mood === 'angry'
+      drop.visible = mood === 'cry'
+      eye.scale.set(mood === 'surprised' ? 1.12 : 1, asleep || (mood === 'wink' && i === 1) ? 0.1 : blink * open, 1)
       pupil.scale.setScalar(mood === 'surprised' ? 0.7 : 1)
       const lx = mood === 'confused' ? (i ? 0.1 : -0.1) : glance ? -glance * 0.12 : lookX * 0.12
       pupil.position.x = mood === 'think' ? 0.1 : Math.max(-0.12, Math.min(0.12, lx))
-      pupil.position.y = mood === 'think' || mood === 'surprised' ? 0.1 : mood === 'love' ? -0.08 : Math.max(-0.1, Math.min(0.1, -lookY * 0.1))
+      pupil.position.y = mood === 'think' || mood === 'surprised' ? 0.1 : mood === 'love' || mood === 'cry' ? -0.08 : Math.max(-0.1, Math.min(0.1, -lookY * 0.1))
     })
     for (const [name, m] of Object.entries(mouths)) m.visible = MOUTH[mood] === name
-    for (const c of cheeks) c.visible = mood === 'happy' || mood === 'love'
+    for (const c of cheeks) c.visible = mood === 'happy' || mood === 'love' || mood === 'laugh' || mood === 'wink' || mood === 'angry'
+    for (const [m, g] of Object.entries(signs)) { g.visible = m === mood; g.position.y = signAt.y + me.position.y }
     renderer.render(scene, camera)
-    frame.clearRect(0, 0, W, H)
-    frame.drawImage(renderer.domElement, 0, 0)
-    draws.draw(frame, t)
+    out.clearRect(0, 0, W, H)
+    out.drawImage(renderer.domElement, 0, 0)
   }
 
   let last = 0, raf = 0
   const loop = (t: number) => {
     raf = requestAnimationFrame(loop)
-    const busy = dirty || draws.restless || squashT || trick || (mood !== 'idle' && mood !== 'sulk' && mood !== 'sleep') || Math.abs(me.rotation.y - (mood === 'sulk' ? Math.PI * 0.85 : lookX * 0.35)) > 0.01 || (blinking && t - blinking < 160)
+    const busy = dirty || squashT || trick || (mood !== 'idle' && mood !== 'sulk' && mood !== 'sleep') || Math.abs(me.rotation.y - (mood === 'sulk' ? Math.PI * 0.85 : lookX * 0.35)) > 0.01 || (blinking && t - blinking < 160)
     if (!busy && t - last < (reduced ? 1000 : 120)) return
     last = t; dirty = false
     draw(reduced ? 0 : t)

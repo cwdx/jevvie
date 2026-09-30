@@ -8,8 +8,7 @@
   "exports": {
     ".": "./src/companion.ts",
     "./character": "./src/character.ts",
-    "./trail": "./src/trail.ts",
-    "./styles": "./src/styles.ts"
+    "./trail": "./src/trail.ts"
   },
   "files": [
     "src",

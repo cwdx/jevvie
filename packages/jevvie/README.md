@@ -14,13 +14,13 @@ does it.
   probabilities, not only its pick: `ranked` lists an `Answer`'s likely options, and `unsure` is true when the top one
   is under half with a close second, so you can ask which one was meant.
 - **What you bring**: your tools (`ToolInfo[]`), usually your WebMCP registry; tips and suggestions (`Tip[]`,
-  `Suggestion[]`); all copy, and the Jev call with its instructions, which stay on your server; `CharacterColors`; the
-  trail's RGB; and the font for the ascii style, which comes from the canvas's CSS `font-family`.
+  `Suggestion[]`); all copy, and the Jev call with its instructions, which stay on your server; `CharacterColors`; and the
+  trail's RGB.
 - **The character** (`@cw/jevvie/character`, three.js as a peer): a voxel bar with eyes, drawn small at hard pixels.
   Its shape comes from a catalogue (plain shapes, variants, a chess set, a space set, emoji, page), and it can wear a
-  clip, a pencil, a pin, a flag or antennas. It blinks, breathes, follows the pointer, and has moods (happy, think,
-  sulk, sleep, surprised, confused, love) and tricks (spin, jump, wave, look, stretch, tap); it renders only while
-  something moves, and holds still under reduced motion. `mountCharacter(canvas, { colors, reduced, shape, wear, style })`.
+  clip, a pencil, a pin, a flag or antennas. It blinks, breathes, follows the pointer, and has moods (happy, love,
+  laugh, wink, think, confused, surprised, cry, angry, sulk, sleep), each with its sign (♥, ?, !, …, zZ) and tricks (spin, jump, wave, look, stretch, tap); it renders only while
+  something moves, and holds still under reduced motion. `mountCharacter(canvas, { colors, reduced, shape, wear })`.
 - **The trail** (`@cw/jevvie/trail`, vgpu as a peer): dots along its path on a full-window canvas, 1-bit dithered
   and gone within a second. `mountTrail(canvas, rgb)`; `null` where the browser has no WebGPU.
 

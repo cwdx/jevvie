@@ -1,8 +1,6 @@
 import * as THREE from 'three/webgpu'
 import { stylist, type Style } from './styles'
 
-// WebGL2 (forceWebGL): it leaves the WebGPU device to other work on the page, such as the trail, and a lost WebGPU
-// device would throw where nothing can catch it. Rendered at a low resolution that CSS scales up with hard pixels.
 export type Mood = 'idle' | 'happy' | 'think' | 'sulk' | 'sleep' | 'surprised' | 'confused' | 'love'
 export type Trick = 'spin' | 'jump' | 'wave' | 'look' | 'stretch' | 'tap'
 export const TRICKS: readonly Trick[] = ['spin', 'jump', 'wave', 'look', 'stretch', 'tap']
@@ -28,7 +26,6 @@ export const SHAPES: readonly Shape[] = ['bar', 'block', 'blob', 'bubble', 'page
 export type Wear = 'none' | 'clip' | 'pencil' | 'pin' | 'flag' | 'antennas'
 
 const W = 64, H = 44
-/** One render pixel in scene units: the camera shows 3.5 units across W. */
 const PX = 3.5 / W
 
 /** `eyes` is also paper; `ink` the pupils, mouth and feet; `ground` the colour its light bounces from. */
@@ -47,6 +44,7 @@ function sharedRenderer() {
   return shared
 }
 
+/** Renders with WebGL2 (forceWebGL): it leaves the WebGPU device to other work on the page, and a lost WebGPU device would throw where nothing can catch it. */
 export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduced = false, shape = 'bar', wear = 'none', style = 'toon' }: { colors: CharacterColors; reduced?: boolean; shape?: Shape; wear?: Wear; style?: Style }): Promise<JevvieView> {
   const renderer = await sharedRenderer()
   users++
@@ -64,7 +62,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   sun.position.set(2.5, 4, 3)
   scene.add(sun)
 
-  // three flat tones, no gradient: the pixel-art shading
   const tones = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]), 3, 1)
   tones.minFilter = tones.magFilter = THREE.NearestFilter
   tones.needsUpdate = true
@@ -118,7 +115,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     },
     knight: () => {
       add(lathe([...BASE, [0.42, -0.45], [0, -0.45]]))
-      // neck, head and muzzle, two ears, an ink mane
       add(box(0.66, 0.7, 0.56, skin), -0.06, -0.12)
       add(box(0.8, 0.56, 0.56, skin), 0.12, 0.34); add(box(0.34, 0.34, 0.5, skin), 0.62, 0.24)
       add(box(0.14, 0.22, 0.14, skin), -0.16, 0.7); add(box(0.14, 0.22, 0.14, skin), 0.08, 0.7)
@@ -130,7 +126,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
       add(new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 8), skin), 0, 0.05).scale.set(1.35, 0.9, 0.9)
       return { y: 0.12, z: 0.9, scale: 0.9, feet: [-0.55, 0.55], floor: -0.78, top: 0.85 }
     },
-    // a round face, like an emoji
     emoji: () => {
       const coin = add(new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 0.36, 14), skin), 0, 0.05); coin.rotation.x = Math.PI / 2
       shine(0.7, 0.8).position.z = 0.19
@@ -138,12 +133,10 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     },
     bubble: () => {
       add(box(2.1, 1.25, 0.7, skin), 0, 0.2); shine(1.8, 0.82)
-      // the tail, a pixel staircase
       add(box(0.36, 0.2, 0.7, skin), -0.62, -0.5); add(box(0.2, 0.2, 0.7, skin), -0.74, -0.68)
       return { y: 0.3, z: 0.36, scale: 1, feet: [], floor: -0.8, top: 0.83 }
     },
     page: () => {
-      // ruled lines, the margin rule and its punch holes
       add(box(1.5, 1.5, 0.06, paper), 0, 0.1)
       for (let i = 0; i < 5; i++) { const l = box(1.4, PX * 0.8, 0.02, rule); l.position.z = 0.04; add(l, 0.02, -0.46 + i * 0.28) }
       const margin = box(PX, 1.5, 0.02, skin); margin.position.z = 0.045; add(margin, -0.42, 0.1)
@@ -151,7 +144,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
       return { y: 0.25, z: 0.06, scale: 0.75, feet: [-0.3, 0.4], floor: -0.72, top: 0.85, whites: false }
     },
     clip: () => {
-      // a binder clip
       add(box(1.9, 1.0, 0.7, metal), 0, 0)
       const handle = (x: number) => { const g = box(0.08, 0.7, 0.08, ink); g.position.z = -0.15; add(g, x, 0.75); const t = box(0.5, 0.08, 0.08, ink); t.position.z = -0.15; add(t, x + (x < 0 ? 0.21 : -0.21), 1.08) }
       handle(-0.55); handle(0.55)
@@ -171,7 +163,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
       return { y: -0.02, z: 0.8, scale: 0.8, feet: [-0.46, 0.46], floor: -0.7, top: 0.62 }
     },
     sticky: () => {
-      // its bottom corner curling up
       add(box(1.5, 1.5, 0.04, skin), 0, 0.1).rotation.z = 0.04
       const curl = new THREE.Shape(); curl.moveTo(0.75, -0.25); curl.lineTo(0.25, -0.65); curl.lineTo(0.75, -0.65)
       add(new THREE.Mesh(new THREE.ShapeGeometry(curl), light)).position.z = 0.03
@@ -183,7 +174,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
       wire.absarc(-0.08, -0.56, 0.24, 0, Math.PI, true); wire.lineTo(-0.32, 0.62); wire.absarc(0.02, 0.62, 0.34, Math.PI, 0, true); wire.lineTo(0.36, -0.42)
       const path = new THREE.CatmullRomCurve3(wire.getPoints(6).map((v) => new THREE.Vector3(v.x, v.y, 0)))
       add(new THREE.Mesh(new THREE.TubeGeometry(path, 48, 0.05, 4), metal), 0, -0.05).scale.setScalar(1.1)
-      // eyebrows
       for (const x of [-0.36, 0.36]) { const brow = box(0.3, 0.07, 0.04, ink); brow.rotation.z = x < 0 ? 0.25 : -0.25; brow.position.z = 0.14; add(brow, x, 0.86) }
       return { y: 0.52, z: 0.12, scale: 0.78, feet: [], floor: -0.95, top: 1.0 }
     },
@@ -194,7 +184,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     },
     moon: () => {
       add(new THREE.Mesh(new THREE.SphereGeometry(0.78, 12, 8), paper), 0, 0)
-      // craters
       for (const [x, y, r] of [[-0.5, 0.42, 0.14], [0.52, -0.3, 0.18], [-0.3, -0.5, 0.1], [0.36, 0.5, 0.09]] as const) { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.04, 8), crater); c.rotation.x = Math.PI / 2; c.lookAt(x * 3, y * 3, 3); c.rotateX(Math.PI / 2); c.position.z = Math.sqrt(Math.max(0, 0.6 - x * x - y * y)); add(c, x, y) }
       return { y: 0.08, z: 0.8, scale: 0.72, feet: [-0.35, 0.35], floor: -0.84, top: 0.78, whites: false }
     },
@@ -205,7 +194,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
       return { y: 0.02, z: 0.22, scale: 0.55, feet: [-0.42, 0.42], floor: -0.9, top: 1.04 }
     },
     rocket: () => {
-      // a Saturn V
       add(lathe([[0, -0.62], [0.5, -0.62], [0.5, 0.38], [0.38, 0.52], [0.38, 0.64], [0.14, 0.9], [0.03, 1.08], [0, 1.08]])).material = paper
       for (const y of [-0.42, 0.44]) add(lathe([[0.51, y - 0.05], [0.51, y + 0.05], [0, y + 0.05]])).material = ink
       for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) { const f = box(0.08, 0.36, 0.3, pinHead); f.rotation.y = a; f.position.z = Math.cos(a) * 0.54; add(f, Math.sin(a) * 0.54, -0.5) }
@@ -213,7 +201,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
       return { y: 0.02, z: 0.5, scale: 0.5, feet: [], floor: -0.9, top: 1.08, whites: false }
     },
     lander: () => {
-      // Apollo's lunar module
       add(new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.42, 8), skin), 0, -0.22)
       add(box(0.9, 0.52, 0.66, metal), 0, 0.28)
       add(box(0.24, 0.1, 0.24, ink), 0, 0.6)
@@ -290,16 +277,13 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     onTop(box(0.05, 0.3, 0.05, metal), -0.4, 0.12)
     onTop(new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), pinHead), -0.4, 0.34)
   } else if (wear === 'flag') {
-    // Apollo 11's, held out by a crossbar
     onTop(box(0.05, 0.9, 0.05, metal), -0.45, 0.45)
     onTop(box(0.56, 0.36, 0.02, paper), -0.17, 0.72)
     for (const y of [0.62, 0.78]) onTop(box(0.56, 0.06, 0.03, pinHead), -0.17, y)
   } else if (wear === 'antennas') {
-    // Sputnik's
     for (const [x, z] of [[-0.25, 0.1], [0.25, 0.1], [-0.2, -0.15], [0.2, -0.15]] as const) onTop(box(0.03, 0.8, 0.03, metal), x, 0.36, z, x < 0 ? 0.5 : -0.5)
   }
   scene.add(me)
-  // the shadow, which shrinks as it jumps
   const size = new THREE.Box3().setFromObject(me), [sw, sd] = [size.max.x - size.min.x + 0.2, Math.min(0.9, size.max.z - size.min.z + 0.1)]
   const ground = box(1, 0.01, 1, shade)
   ground.position.set((size.max.x + size.min.x) / 2, body.floor - 0.11, 0)
@@ -317,7 +301,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     prev = t
     const follow = (k: number) => (reduced ? 1 : 1 - (1 - k) ** (dt / 16.7))
     const asleep = mood === 'sleep'
-    // the trick's progress, 0–1
     const k = trick ? Math.min(1, (t - trickT) / TRICK_MS[trick]) : 0
     if (trick && k >= 1) { if (trick === 'jump') squash(0.6, t); trick = undefined }
     const arc = Math.sin(k * Math.PI)
@@ -334,7 +317,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     spun = spin
     const tilt = mood === 'confused' ? 0.18 + Math.sin(s * 2) * 0.03 : mood === 'love' ? Math.sin(s * 2.5) * 0.08 : mood === 'think' ? Math.sin(s * 5) * 0.04 : 0
     me.rotation.z = (reduced ? 0 : tilt) + sway
-    // a damped spring
     if (squashT) { const k = (t - squashT) / 1000; squashV = Math.exp(-k * 7) * Math.cos(k * 22) * 0.35 * squashA; if (k > 1.2) { squashT = 0; squashV = 0 } }
     me.scale.set(1 - squashV * 0.6 - reach * 0.4, 1 + breathe + squashV + reach, 1)
     me.position.y = bounce + hop - (asleep ? 0.12 : 0)
@@ -359,7 +341,6 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     draws.draw(frame, t)
   }
 
-  // render only while something moves, otherwise a few frames a second
   let last = 0, raf = 0
   const loop = (t: number) => {
     raf = requestAnimationFrame(loop)

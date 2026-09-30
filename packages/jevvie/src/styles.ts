@@ -1,5 +1,4 @@
-// Post-processing on a 2D canvas: cheap, since the frame is tiny, and it leaves the one WebGL context alone. `wire` is
-// done in the materials (character.ts).
+// Post-processing on a 2D canvas, so the one WebGL context is left alone. `wire` is done in the materials.
 export type Style = 'toon' | 'wire' | 'ascii' | 'dither' | 'halftone' | 'sketch' | 'glitch' | 'echo'
 export const STYLES: readonly Style[] = ['toon', 'wire', 'ascii', 'dither', 'halftone', 'sketch', 'glitch', 'echo']
 
@@ -55,7 +54,6 @@ export function stylist(style: Style, out: CanvasRenderingContext2D, w: number, 
     }
     case 'echo': return {
       ...plain(),
-      // fade rather than clear, so movement leaves copies behind
       draw: (f) => {
         out.globalCompositeOperation = 'destination-out'; out.globalAlpha = 0.28
         out.fillRect(0, 0, w, h)
@@ -65,7 +63,6 @@ export function stylist(style: Style, out: CanvasRenderingContext2D, w: number, 
     }
     case 'ascii':
     case 'halftone': {
-      // each in its pixels' colour, so the eyes and feet stay dark
       const block = style === 'ascii' ? 3 : 2, cell = block * S
       const font = `${cell}px ${getComputedStyle(out.canvas).fontFamily}`
       return {

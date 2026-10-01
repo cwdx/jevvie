@@ -76,7 +76,7 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   const BASE: [number, number][] = [[0, -0.85], [0.6, -0.85], [0.6, -0.72], [0.5, -0.66], [0.44, -0.6], [0.44, -0.54], [0.3, -0.48]]
   const dome = (x: number, y: number, r: number, ry = r): [number, number][] => Array.from({ length: 7 }, (_, i) => { const a = (-60 + i * 25) * Math.PI / 180; return [Math.max(0, x + Math.cos(a) * r), y + Math.sin(a) * ry] as [number, number] })
   const shine = (w: number, y: number) => { const m = box(w, PX * 1.2, PX, light); m.position.z = 0.401; return add(m, -0.05, y - PX) }
-  type Spec = { y: number; z: number; scale: number; feet: number[]; floor: number; top: number; whites?: boolean; profile?: { eye: [number, number]; mouth: [number, number]; z: number } }
+  type Spec = { y: number; z: number; scale: number; feet: number[]; floor: number; top: number; whites?: boolean; dark?: boolean; profile?: { eye: [number, number]; mouth: [number, number]; z: number } }
   const bodies: Record<Shape, () => Spec> = {
     bar: () => { add(box(2.3, 0.95, 0.8, skin)); shine(2.0, 0.47); return { y: 0, z: 0.41, scale: 1, feet: [-0.7, 0.7], floor: -0.57, top: 0.48 } },
     block: () => { add(box(1.2, 1.7, 0.8, skin), 0, 0.2); shine(1.0, 1.05); return { y: 0.45, z: 0.41, scale: 0.85, feet: [-0.32, 0.32], floor: -0.75, top: 1.05 } },
@@ -209,10 +209,12 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
       add(new THREE.Mesh(new THREE.SphereGeometry(0.44, 12, 8), visor), 0, 0.36).scale.set(1.05, 0.72, 0.62)
       me.children.at(-1)!.position.z = 0.38
       add(box(0.26, 0.26, 0.04, pinHead), 0.28, -0.26).position.z = 0.31
-      return { y: 0.38, z: 0.68, scale: 0.4, feet: [-0.26, 0.26], floor: -0.74, top: 0.96 }
+      return { y: 0.38, z: 0.68, scale: 0.4, feet: [-0.26, 0.26], floor: -0.74, top: 0.96, dark: true }
     },
   }
   const body = bodies[shape]()
+  // on a dark visor the face is drawn in paper
+  const mark = body.dark ? white : ink
   const face = new THREE.Group()
   face.position.set(0, body.y, body.z)
   face.scale.setScalar(body.scale)
@@ -231,8 +233,8 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     face.add(eye)
     const look = eye.children.slice()
     const caret = new THREE.Group()
-    for (const side of [-1, 1]) { const b = box(0.24, PX * 1.6, 0.02, ink); b.rotation.z = side * -0.6; b.position.set(side * 0.09, -0.02, 0.02); caret.add(b) }
-    const brow = box(0.38, PX * 1.6, 0.02, ink)
+    for (const side of [-1, 1]) { const b = box(0.24, PX * 1.6, 0.02, mark); b.rotation.z = side * -0.6; b.position.set(side * 0.09, -0.02, 0.02); caret.add(b) }
+    const brow = box(0.38, PX * 1.6, 0.02, mark)
     brow.rotation.z = x < 0 ? -0.4 : 0.4
     brow.position.set(0, 0.33, 0.02)
     const drop = box(PX * 1.6, 0.46, 0.02, tear)
@@ -242,7 +244,7 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   })
   const mouthAt = (...parts: [number, number, number, number][]) => {
     const g = new THREE.Group()
-    for (const [x, y, w, h] of parts) { const p = box(w, h, 0.02, ink); p.position.set(x, y, 0); g.add(p) }
+    for (const [x, y, w, h] of parts) { const p = box(w, h, 0.02, mark); p.position.set(x, y, 0); g.add(p) }
     g.position.set(0, -0.27, 0.01)
     face.add(g)
     return g
@@ -260,7 +262,8 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     idle: 'smile', happy: 'grin', love: 'grin', think: 'flat', confused: 'wonky', surprised: 'open', sulk: 'frown', sleep: undefined,
     laugh: 'wide', cry: 'frown', angry: 'frown', wink: 'grin',
   }
-  const cheeks = [-0.82, 0.82].map((x) => { const c = box(0.2, PX * 1.4, 0.02, blush); c.position.set(x, -0.16, 0.01); face.add(c); return c })
+  const cheekX = CHESS_SET.includes(shape as ChessPiece) ? 0.6 : 0.82
+  const cheeks = [-cheekX, cheekX].map((x) => { const c = box(0.2, PX * 1.4, 0.02, blush); c.position.set(x, -0.16, 0.01); face.add(c); return c })
   if (body.profile) {
     const { eye, mouth, z } = body.profile, s = body.scale
     eyes.forEach(({ eye: e }, i) => { e.position.set(eye[0] / s, eye[1] / s, (i ? -z : z) / s); e.rotation.y = i ? Math.PI : 0 })
@@ -288,6 +291,14 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   }
   scene.add(me)
   const size = new THREE.Box3().setFromObject(me), [sw, sd] = [size.max.x - size.min.x + 0.2, Math.min(0.9, size.max.z - size.min.z + 0.1)]
+  // a tall body with something on top zooms out until it fits the frame
+  camera.updateMatrixWorld()
+  let fit = 1
+  for (const x of [size.min.x, size.max.x]) for (const y of [size.min.y, size.max.y]) for (const z of [size.min.z, size.max.z]) {
+    const p = new THREE.Vector3(x, y, z).project(camera)
+    fit = Math.max(fit, Math.abs(p.x) / 0.96, Math.abs(p.y) / 0.96)
+  }
+  if (fit > 1) { camera.left *= fit; camera.right *= fit; camera.top *= fit; camera.bottom *= fit; camera.updateProjectionMatrix() }
   const glyph = (rows: string[], m: THREE.Material, x = 0, y = 0) => {
     const g = new THREE.Group()
     rows.forEach((r, j) => [...r].forEach((c, i) => { if (c === '#') { const b = box(PX, PX, 0.02, m); b.position.set(x + i * PX, y - j * PX, 0); g.add(b) } }))

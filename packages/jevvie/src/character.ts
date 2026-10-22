@@ -1,9 +1,9 @@
-import * as THREE from 'three/webgpu'
+import * as THREE from "three/webgpu"
 
-export type Mood = 'idle' | 'happy' | 'think' | 'sulk' | 'sleep' | 'surprised' | 'confused' | 'love' | 'laugh' | 'cry' | 'angry' | 'wink'
-export const MOODS: readonly Mood[] = ['idle', 'happy', 'love', 'laugh', 'wink', 'think', 'confused', 'surprised', 'cry', 'angry', 'sulk', 'sleep']
-export type Trick = 'spin' | 'jump' | 'wave' | 'look' | 'stretch' | 'tap'
-export const TRICKS: readonly Trick[] = ['spin', 'jump', 'wave', 'look', 'stretch', 'tap']
+export type Mood = "idle" | "happy" | "think" | "sulk" | "sleep" | "surprised" | "confused" | "love" | "laugh" | "cry" | "angry" | "wink"
+export const MOODS: readonly Mood[] = ["idle", "happy", "love", "laugh", "wink", "think", "confused", "surprised", "cry", "angry", "sulk", "sleep"]
+export type Trick = "spin" | "jump" | "wave" | "look" | "stretch" | "tap"
+export const TRICKS: readonly Trick[] = ["spin", "jump", "wave", "look", "stretch", "tap"]
 const TRICK_MS: Record<Trick, number> = { spin: 700, jump: 600, wave: 900, look: 1600, stretch: 900, tap: 1000 }
 export type JevvieView = {
   look: (dx: number, dy: number) => void
@@ -13,15 +13,15 @@ export type JevvieView = {
   dispose: () => void
 }
 
-export type Shape = 'bar' | 'block' | 'blob' | 'bubble' | 'page' | 'clip' | 'emoji' | Variant | ChessPiece | SpaceBody
-export type Variant = 'chamfer' | 'capsule' | 'gumdrop' | 'sticky' | 'paperclip'
-export const VARIANTS: readonly Variant[] = ['chamfer', 'capsule', 'gumdrop', 'sticky', 'paperclip']
-export type ChessPiece = 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king'
-export const CHESS_SET: readonly ChessPiece[] = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king']
-export type SpaceBody = 'planet' | 'moon' | 'star' | 'rocket' | 'lander' | 'astronaut'
-export const SPACE: readonly SpaceBody[] = ['planet', 'moon', 'star', 'rocket', 'lander', 'astronaut']
-export const SHAPES: readonly Shape[] = ['bar', 'block', 'blob', 'bubble', 'page', 'clip', 'emoji', ...VARIANTS, ...CHESS_SET, ...SPACE]
-export type Wear = 'none' | 'clip' | 'pencil' | 'pin' | 'flag' | 'antennas'
+export type Shape = "bar" | "block" | "blob" | "bubble" | "page" | "clip" | "emoji" | Variant | ChessPiece | SpaceBody
+export type Variant = "chamfer" | "capsule" | "gumdrop" | "sticky" | "paperclip"
+export const VARIANTS: readonly Variant[] = ["chamfer", "capsule", "gumdrop", "sticky", "paperclip"]
+export type ChessPiece = "pawn" | "knight" | "bishop" | "rook" | "queen" | "king"
+export const CHESS_SET: readonly ChessPiece[] = ["pawn", "knight", "bishop", "rook", "queen", "king"]
+export type SpaceBody = "planet" | "moon" | "star" | "rocket" | "lander" | "astronaut"
+export const SPACE: readonly SpaceBody[] = ["planet", "moon", "star", "rocket", "lander", "astronaut"]
+export const SHAPES: readonly Shape[] = ["bar", "block", "blob", "bubble", "page", "clip", "emoji", ...VARIANTS, ...CHESS_SET, ...SPACE]
+export type Wear = "none" | "clip" | "pencil" | "pin" | "flag" | "antennas"
 
 const W = 64, H = 44
 const PX = 3.5 / W
@@ -42,10 +42,10 @@ function sharedRenderer() {
 }
 
 // WebGL2, not WebGPU: a lost WebGPU device throws where nothing can catch it.
-export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduced = false, shape = 'bar', wear = 'none' }: { colors: CharacterColors; reduced?: boolean; shape?: Shape; wear?: Wear }): Promise<JevvieView> {
+export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduced = false, shape = "bar", wear = "none" }: { colors: CharacterColors; reduced?: boolean; shape?: Shape; wear?: Wear }): Promise<JevvieView> {
   const renderer = await sharedRenderer()
   users++
-  const out = canvas.getContext('2d')!
+  const out = canvas.getContext("2d")!
   canvas.width = W
   canvas.height = H
 
@@ -182,7 +182,7 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     },
     star: () => {
       const outline = new THREE.Shape()
-      for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 0.44 : 1.02; outline[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r) }
+      for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 0.44 : 1.02; outline[i ? "lineTo" : "moveTo"](Math.cos(a) * r, Math.sin(a) * r) }
       const star = new THREE.Mesh(new THREE.ExtrudeGeometry(outline, { depth: 0.4, bevelEnabled: false }), skin); star.position.z = -0.2; add(star, 0, 0.02)
       return { y: 0.02, z: 0.22, scale: 0.55, feet: [-0.42, 0.42], floor: -0.9, top: 1.04 }
     },
@@ -259,8 +259,8 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     frown: mouthAt([0, 0.01, 0.2, PX], [-0.12, -0.02, PX, PX], [0.12, -0.02, PX, PX]),
   }
   const MOUTH: Record<Mood, keyof typeof mouths | undefined> = {
-    idle: 'smile', happy: 'grin', love: 'grin', think: 'flat', confused: 'wonky', surprised: 'open', sulk: 'frown', sleep: undefined,
-    laugh: 'wide', cry: 'frown', angry: 'frown', wink: 'grin',
+    idle: "smile", happy: "grin", love: "grin", think: "flat", confused: "wonky", surprised: "open", sulk: "frown", sleep: undefined,
+    laugh: "wide", cry: "frown", angry: "frown", wink: "grin",
   }
   const cheekX = CHESS_SET.includes(shape as ChessPiece) ? 0.6 : 0.82
   const cheeks = [-cheekX, cheekX].map((x) => { const c = box(0.2, PX * 1.4, 0.02, blush); c.position.set(x, -0.16, 0.01); face.add(c); return c })
@@ -272,21 +272,21 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   }
   const feet = body.feet.map((x) => { const f = box(0.36, 0.16, 0.5, ink); f.position.set(x, body.floor, 0); me.add(f); return f })
   const onTop = (m: THREE.Mesh, x: number, y: number, z = 0, rz = 0) => { m.position.set(x, body.top + y, z); m.rotation.z = rz; me.add(m) }
-  if (wear === 'clip') {
+  if (wear === "clip") {
     onTop(box(0.5, 0.26, 0.5, ink), 0.35, 0.1)
     onTop(box(0.06, 0.3, 0.06, metal), 0.22, 0.34); onTop(box(0.06, 0.3, 0.06, metal), 0.48, 0.34)
-  } else if (wear === 'pencil') {
+  } else if (wear === "pencil") {
     onTop(box(1.3, 0.14, 0.14, wood), 0.05, 0.12, 0.1, 0.18)
     onTop(box(0.18, 0.14, 0.14, ink), 0.74, 0.24, 0.1, 0.18)
     onTop(box(0.16, 0.16, 0.16, pinHead), -0.64, -0.01, 0.1, 0.18)
-  } else if (wear === 'pin') {
+  } else if (wear === "pin") {
     onTop(box(0.05, 0.3, 0.05, metal), -0.4, 0.12)
     onTop(new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), pinHead), -0.4, 0.34)
-  } else if (wear === 'flag') {
+  } else if (wear === "flag") {
     onTop(box(0.05, 0.9, 0.05, metal), -0.45, 0.45)
     onTop(box(0.56, 0.36, 0.02, paper), -0.17, 0.72)
     for (const y of [0.62, 0.78]) onTop(box(0.56, 0.06, 0.03, pinHead), -0.17, y)
-  } else if (wear === 'antennas') {
+  } else if (wear === "antennas") {
     for (const [x, z] of [[-0.25, 0.1], [0.25, 0.1], [-0.2, -0.15], [0.2, -0.15]] as const) onTop(box(0.03, 0.8, 0.03, metal), x, 0.36, z, x < 0 ? 0.5 : -0.5)
   }
   scene.add(me)
@@ -301,17 +301,17 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   if (fit > 1) { camera.left *= fit; camera.right *= fit; camera.top *= fit; camera.bottom *= fit; camera.updateProjectionMatrix() }
   const glyph = (rows: string[], m: THREE.Material, x = 0, y = 0) => {
     const g = new THREE.Group()
-    rows.forEach((r, j) => [...r].forEach((c, i) => { if (c === '#') { const b = box(PX, PX, 0.02, m); b.position.set(x + i * PX, y - j * PX, 0); g.add(b) } }))
+    rows.forEach((r, j) => [...r].forEach((c, i) => { if (c === "#") { const b = box(PX, PX, 0.02, m); b.position.set(x + i * PX, y - j * PX, 0); g.add(b) } }))
     return g
   }
-  const Z5 = ['#####', '...#.', '..#..', '.#...', '#####']
+  const Z5 = ["#####", "...#.", "..#..", ".#...", "#####"]
   const signs: Partial<Record<Mood, THREE.Group>> = {
-    love: glyph(['.#.#.', '#####', '#####', '.###.', '..#..'], blush),
-    sleep: (() => { const g = glyph(['###', '.#.', '###'], ink, 0, -3 * PX); g.add(glyph(Z5, ink, 4 * PX, 2 * PX)); return g })(),
-    confused: glyph(['.###.', '#...#', '...#.', '..#..', '.....', '..#..'], ink),
-    surprised: glyph(['#', '#', '#', '#', '.', '#'], ink, PX * 2),
-    think: glyph(['#.#.#'], ink, 0, -3 * PX),
-    angry: glyph(['.#.#.', '##.##', '.....', '##.##', '.#.#.'], blush),
+    love: glyph([".#.#.", "#####", "#####", ".###.", "..#.."], blush),
+    sleep: (() => { const g = glyph(["###", ".#.", "###"], ink, 0, -3 * PX); g.add(glyph(Z5, ink, 4 * PX, 2 * PX)); return g })(),
+    confused: glyph([".###.", "#...#", "...#.", "..#..", ".....", "..#.."], ink),
+    surprised: glyph(["#", "#", "#", "#", ".", "#"], ink, PX * 2),
+    think: glyph(["#.#.#"], ink, 0, -3 * PX),
+    angry: glyph([".#.#.", "##.##", ".....", "##.##", ".#.#."], blush),
   }
   const signAt = new THREE.Vector3(Math.min(1.25, size.max.x + 0.08), Math.min(0.92, body.top + 0.32), 0.6)
   for (const g of Object.values(signs)) { g.position.copy(signAt); g.visible = false; scene.add(g) }
@@ -319,7 +319,7 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   ground.position.set((size.max.x + size.min.x) / 2, body.floor - 0.11, 0)
   scene.add(ground)
 
-  let mood: Mood = 'idle', lookX = 0, lookY = 0, squashV = 0, squashT = 0, squashA = 1
+  let mood: Mood = "idle", lookX = 0, lookY = 0, squashV = 0, squashT = 0, squashA = 1
   let trick: Trick | undefined, trickT = 0
   let nextBlink = performance.now() + 2500, blinking = 0, dirty = true, spun = 0, prev = 0
   const squash = (amount: number, t = performance.now()) => { if (reduced) return; squashT = t; squashA = amount; dirty = true }
@@ -329,46 +329,46 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
     const dt = prev ? Math.min(100, t - prev) : 16.7
     prev = t
     const follow = (k: number) => (reduced ? 1 : 1 - (1 - k) ** (dt / 16.7))
-    const asleep = mood === 'sleep'
+    const asleep = mood === "sleep"
     const k = trick ? Math.min(1, (t - trickT) / TRICK_MS[trick]) : 0
-    if (trick && k >= 1) { if (trick === 'jump') squash(0.6, t); trick = undefined }
+    if (trick && k >= 1) { if (trick === "jump") squash(0.6, t); trick = undefined }
     const arc = Math.sin(k * Math.PI)
-    const spin = trick === 'spin' ? k * k * (3 - 2 * k) * Math.PI * 2 : 0
-    const hop = trick === 'jump' ? arc * 0.7 : 0
-    const sway = trick === 'wave' ? Math.sin(k * Math.PI * 6) * 0.22 * arc : 0
-    const glance = trick === 'look' ? Math.sin(k * Math.PI * 2) * 0.9 : 0
-    const reach = trick === 'stretch' ? arc * 0.3 : 0
+    const spin = trick === "spin" ? k * k * (3 - 2 * k) * Math.PI * 2 : 0
+    const hop = trick === "jump" ? arc * 0.7 : 0
+    const sway = trick === "wave" ? Math.sin(k * Math.PI * 6) * 0.22 * arc : 0
+    const glance = trick === "look" ? Math.sin(k * Math.PI * 2) * 0.9 : 0
+    const reach = trick === "stretch" ? arc * 0.3 : 0
     const breathe = reduced ? 0 : Math.sin(s * (asleep ? 1.2 : 2.4)) * (asleep ? 0.05 : 0.025)
-    const bounce = (mood === 'happy' || mood === 'laugh') && !reduced ? Math.abs(Math.sin(s * (mood === 'laugh' ? 14 : 9))) * (mood === 'laugh' ? 0.14 : 0.22) : 0
-    const turn = (mood === 'sulk' ? Math.PI * 0.85 : mood === 'think' ? Math.sin(s * 3) * 0.12 : lookX * 0.35) + glance
+    const bounce = (mood === "happy" || mood === "laugh") && !reduced ? Math.abs(Math.sin(s * (mood === "laugh" ? 14 : 9))) * (mood === "laugh" ? 0.14 : 0.22) : 0
+    const turn = (mood === "sulk" ? Math.PI * 0.85 : mood === "think" ? Math.sin(s * 3) * 0.12 : lookX * 0.35) + glance
     me.rotation.y += (turn - me.rotation.y) * follow(glance ? 0.4 : 0.18)
     me.rotation.y += spin ? spin - spun : 0
     spun = spin
-    const tilt = mood === 'confused' ? 0.18 + Math.sin(s * 2) * 0.03 : mood === 'love' ? Math.sin(s * 2.5) * 0.08 : mood === 'think' ? Math.sin(s * 5) * 0.04 : 0
-    const shake = mood === 'angry' && !reduced ? Math.sin(s * 40) * 0.03 : 0
+    const tilt = mood === "confused" ? 0.18 + Math.sin(s * 2) * 0.03 : mood === "love" ? Math.sin(s * 2.5) * 0.08 : mood === "think" ? Math.sin(s * 5) * 0.04 : 0
+    const shake = mood === "angry" && !reduced ? Math.sin(s * 40) * 0.03 : 0
     me.rotation.z = (reduced ? 0 : tilt) + sway + shake
     if (squashT) { const k = (t - squashT) / 1000; squashV = Math.exp(-k * 7) * Math.cos(k * 22) * 0.35 * squashA; if (k > 1.2) { squashT = 0; squashV = 0 } }
     me.scale.set(1 - squashV * 0.6 - reach * 0.4, 1 + breathe + squashV + reach, 1)
     me.position.y = bounce + hop - (asleep ? 0.12 : 0)
-    if (feet[1]) feet[1].position.y = body.floor + (trick === 'tap' ? Math.abs(Math.sin(k * Math.PI * 4)) * 0.18 : 0)
+    if (feet[1]) feet[1].position.y = body.floor + (trick === "tap" ? Math.abs(Math.sin(k * Math.PI * 4)) * 0.18 : 0)
     const up = Math.max(0, me.position.y)
     ground.scale.set(sw * (1 - up * 0.5), 1, sd * (1 - up * 0.5))
     if (t > nextBlink) { blinking = t; nextBlink = t + 2500 + Math.random() * 4000 }
     const blink = blinking && t - blinking < 130 ? 0.12 : 1
     eyes.forEach(({ eye, look, pupil, caret, brow, drop }, i) => {
-      const open = mood === 'surprised' ? 1.25 : mood === 'love' ? 0.3 : mood === 'confused' && i === 0 ? 0.6 : mood === 'cry' ? 0.7 : mood === 'angry' ? 0.75 : 1
-      for (const o of look) o.visible = mood !== 'laugh'
-      caret.visible = mood === 'laugh'
-      brow.visible = mood === 'angry'
-      drop.visible = mood === 'cry'
-      eye.scale.set(mood === 'surprised' ? 1.12 : 1, asleep || (mood === 'wink' && i === 1) ? 0.1 : blink * open, 1)
-      pupil.scale.setScalar(mood === 'surprised' ? 0.7 : 1)
-      const lx = mood === 'confused' ? (i ? 0.1 : -0.1) : glance ? -glance * 0.12 : lookX * 0.12
-      pupil.position.x = mood === 'think' ? 0.1 : Math.max(-0.12, Math.min(0.12, lx))
-      pupil.position.y = mood === 'think' || mood === 'surprised' ? 0.1 : mood === 'love' || mood === 'cry' ? -0.08 : Math.max(-0.1, Math.min(0.1, -lookY * 0.1))
+      const open = mood === "surprised" ? 1.25 : mood === "love" ? 0.3 : mood === "confused" && i === 0 ? 0.6 : mood === "cry" ? 0.7 : mood === "angry" ? 0.75 : 1
+      for (const o of look) o.visible = mood !== "laugh"
+      caret.visible = mood === "laugh"
+      brow.visible = mood === "angry"
+      drop.visible = mood === "cry"
+      eye.scale.set(mood === "surprised" ? 1.12 : 1, asleep || (mood === "wink" && i === 1) ? 0.1 : blink * open, 1)
+      pupil.scale.setScalar(mood === "surprised" ? 0.7 : 1)
+      const lx = mood === "confused" ? (i ? 0.1 : -0.1) : glance ? -glance * 0.12 : lookX * 0.12
+      pupil.position.x = mood === "think" ? 0.1 : Math.max(-0.12, Math.min(0.12, lx))
+      pupil.position.y = mood === "think" || mood === "surprised" ? 0.1 : mood === "love" || mood === "cry" ? -0.08 : Math.max(-0.1, Math.min(0.1, -lookY * 0.1))
     })
     for (const [name, m] of Object.entries(mouths)) m.visible = MOUTH[mood] === name
-    for (const c of cheeks) c.visible = mood === 'happy' || mood === 'love' || mood === 'laugh' || mood === 'wink' || mood === 'angry'
+    for (const c of cheeks) c.visible = mood === "happy" || mood === "love" || mood === "laugh" || mood === "wink" || mood === "angry"
     for (const [m, g] of Object.entries(signs)) { g.visible = m === mood; g.position.y = signAt.y + me.position.y }
     renderer.render(scene, camera)
     out.clearRect(0, 0, W, H)
@@ -378,7 +378,7 @@ export async function mountCharacter(canvas: HTMLCanvasElement, { colors, reduce
   let last = 0, raf = 0
   const loop = (t: number) => {
     raf = requestAnimationFrame(loop)
-    const busy = dirty || squashT || trick || (mood !== 'idle' && mood !== 'sulk' && mood !== 'sleep') || Math.abs(me.rotation.y - (mood === 'sulk' ? Math.PI * 0.85 : lookX * 0.35)) > 0.01 || (blinking && t - blinking < 160)
+    const busy = dirty || squashT || trick || (mood !== "idle" && mood !== "sulk" && mood !== "sleep") || Math.abs(me.rotation.y - (mood === "sulk" ? Math.PI * 0.85 : lookX * 0.35)) > 0.01 || (blinking && t - blinking < 160)
     if (!busy && t - last < (reduced ? 1000 : 120)) return
     last = t; dirty = false
     draw(reduced ? 0 : t)

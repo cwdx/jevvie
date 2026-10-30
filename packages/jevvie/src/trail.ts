@@ -1,4 +1,5 @@
 import { draw, frame, init, storage, surface } from "vgpu"
+import { prepareShader } from "@vgpu/wgsl/prepare"
 
 export type Trail = { add: (x: number, y: number) => void; dispose: () => void }
 
@@ -11,7 +12,7 @@ export async function mountTrail(canvas: HTMLCanvasElement, color: readonly [num
   const view = surface(gpu, canvas, { dpr: [1, 2], clearColor: [0, 0, 0, 0] })
   const buffer = storage(gpu, MAX * 16, "read")
   const data = new Float32Array(MAX * 4)
-  const dots = draw(gpu, { shader: SHADER, entry: { vertex: "dot_vs", fragment: "dot_fs" }, vertices: 6, blend: "alpha", label: "jevvie trail", set: { dots: buffer } })
+  const dots = draw(gpu, { shader: prepareShader(SHADER, "trail.wgsl"), entry: { vertex: "dot_vs", fragment: "dot_fs" }, vertices: 6, blend: "alpha", label: "jevvie trail", set: { dots: buffer } })
   const points: { x: number; y: number; t: number }[] = []
   let raf = 0
 
